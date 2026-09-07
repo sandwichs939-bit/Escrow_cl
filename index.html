@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CL-Service Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-yellow: #f5c518;
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --border-color: #2c2c2e;
+            --active-tab: #2a2a2b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-icon {
+            font-size: 18px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            background: radial-gradient(circle, #f5c518 0%, #b8860b 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            font-size: 16px;
+            box-shadow: 0 0 10px rgba(245, 197, 24, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        /* Profile Styles */
+        .profile-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .avatar-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 12px;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #2c2c2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .online-status {
+            width: 8px;
+            height: 8px;
+            background-color: #30d158;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .user-handle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-yellow);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            background-color: var(--accent-yellow);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:active {
+            opacity: 0.8;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 2px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+
+        .filter-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .filter-tab.active {
+            background-color: var(--accent-yellow);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            margin-top: 20px;
+        }
+
+        .empty-state h3 {
+            color: var(--text-main);
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+            padding: 8px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 11px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .nav-item i {
+            font-size: 18px;
+        }
+
+        .nav-item.active {
+            color: var(--accent-yellow);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: flex-end;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            width: 100%;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-yellow);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <i class="fa-solid fa-bars header-icon"></i>
+        <div class="logo">CL</div>
+        <div class="header-actions">
+            <i class="fa-regular fa-bell header-icon"></i>
+            <i class="fa-solid fa-magnifying-glass header-icon"></i>
+        </div>
+    </div>
+
+    <!-- Tab 1: Profile (Главная/Профиль) -->
+    <div id="profile" class="content active">
+        <div class="profile-card">
+            <div class="avatar-container">
+                <i class="fa-solid fa-user-ninja" style="font-size: 50px; color: #505050;"></i>
+            </div>
+            <div class="user-name">
+                <span id="tg-username">Пользователь</span>
+                <span class="online-status"></span>
+            </div>
+            <div class="user-handle" id="tg-handle">@username</div>
+            <button class="btn-primary" onclick="openModal()">Создать заявку</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Кол-во заявок</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">-</div>
+                <div class="stat-label">Рейтинг</div>
+            </div>
+        </div>
+
+        <div class="filter-tabs">
+            <div class="filter-tab active">Заявки 0</div>
+            <div class="filter-tab">Стена 0</div>
+            <div class="filter-tab">Отзывы 0</div>
+        </div>
+
+        <div class="empty-state">
+            <h3>Здесь пока ничего нет</h3>
+            <p>История действий пуста.</p>
+        </div>
+    </div>
+
+    <!-- Tab 2: Catalog (Каталог) -->
+    <div id="catalog" class="content">
+        <h2 style="margin-bottom: 16px;">Каталог услуг</h2>
+        <div class="empty-state">
+            <i class="fa-solid fa-layer-group" style="font-size: 32px; margin-bottom: 12px; color: var(--accent-yellow);"></i>
+            <h3>Раздел в разработке</h3>
+            <p>Доступные категории появятся позже.</p>
+        </div>
+    </div>
+
+    <!-- Tab 3: Deals (Сделки/Заявки) -->
+    <div id="deals" class="content">
+        <h2 style="margin-bottom: 16px;">Активные заявки</h2>
+        <div class="filter-tabs">
+            <div class="filter-tab active">Все</div>
+            <div class="filter-tab">Покупки</div>
+            <div class="filter-tab">Продажи</div>
+        </div>
+        <div class="empty-state">
+            <i class="fa-solid fa-briefcase" style="font-size: 32px; margin-bottom: 12px; color: var(--accent-yellow);"></i>
+            <h3>У вас пока нет активных процессов</h3>
+            <p>Все ваши созданные соглашения будут отображаться здесь.</p>
+        </div>
+    </div>
+
+    <!-- Tab 4: Chat (Чат) -->
+    <div id="chat" class="content">
+        <h2 style="margin-bottom: 16px;">Сообщения</h2>
+        <div class="empty-state">
+            <i class="fa-solid fa-comments" style="font-size: 32px; margin-bottom: 12px; color: var(--accent-yellow);"></i>
+            <h3>Диалогов пока нет</h3>
+            <p>Здесь будут отображаться обсуждения условий.</p>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('profile', this)">
+            <i class="fa-solid fa-house"></i>
+            <span>Главная</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('catalog', this)">
+            <i class="fa-solid fa-border-all"></i>
+            <span>Каталог</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('deals', this)">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>Заявки</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('chat', this)">
+            <i class="fa-regular fa-comment-dots"></i>
+            <span>Чат</span>
+        </div>
+    </div>
+
+    <!-- Modal for Creation -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Создать новую заявку</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Участник (@username)</label>
+                <input type="text" class="form-control" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>Описание условий</label>
+                <textarea class="form-control" rows="3" placeholder="Укажите условия согласования..."></textarea>
+            </div>
+            <button class="btn-primary" style="margin-top: 10px;" onclick="closeModal()">Отправить на согласование</button>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp API
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            
+            // Автоматическое получение username из Telegram
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                document.getElementById('tg-username').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+                document.getElementById('tg-handle').innerText = user.username ? '@' + user.username : 'ID: ' + user.id;
+            }
+        }
+
+        // Переключение вкладок
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // Управление модальным окном
+        function openModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
