@@ -1,30 +1,29 @@
 import os
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+import json
+from telebot import TeleBot, types
+from telebot.types import WebAppInfo
 from aiohttp import web
 import asyncio
 
 API_TOKEN = '8949561310:AAGirJZq0mLI3UQt_CN0aT_wsVwPS3sIbnY'
 WALLET_BEP20 = '0xc048D71520C136B3C6dAa53cfE175e785932A432'
-SERVER_URL = 'https://example.com'
+SERVER_URL = 'https://example.com' # Ссылку заменим в конце
 
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+bot = TeleBot(API_TOKEN)
 deals = {}
 
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(KeyboardButton("🤝 Создать сделку"))
-    await message.answer("Добро пожаловать в Escrow Service! Нажмите кнопку ниже для создания сделки.", reply_markup=markup)
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton("🤝 Создать сделку"))
+    bot.send_message(message.chat.id, "Добро пожаловать в Escrow Service! Нажмите кнопку ниже для создания сделки.", reply_markup=markup)
 
-@dp.message_handler(lambda message: message.text == "🤝 Создать сделку")
-async def ask_deal_details(message: types.Message):
-    await message.answer("Введите сумму сделки в USDT и через пробел @юзернейм продавца.\nПример: `85 @cryptobotmanag`", parse_mode="Markdown")
+@bot.message_handler(func=lambda message: message.text == "🤝 Создать сделку")
+def ask_deal_details(message):
+    bot.send_message(message.chat.id, "Введите сумму сделки в USDT и через пробел @юзернейм продавца.\nПример: `85 @cryptobotmanag`", parse_mode="Markdown")
 
-@dp.message_handler()
-async def process_deal_creation(message: types.Message):
+@bot.message_handler(func=lambda message: True)
+def process_deal_creation(message):
     if "🤝" in message.text: return
     try:
         parts = message.text.split()
@@ -37,12 +36,12 @@ async def process_deal_creation(message: types.Message):
         
         web_app_url = f"{SERVER_URL}/deal/{deal_id}"
         
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(KeyboardButton("Открыть сделку", web_app=WebAppInfo(url=web_app_url)))
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(types.KeyboardButton("Открыть сделку", web_app=WebAppInfo(url=web_app_url)))
         
-        await message.answer(f"✅ Сделка на {amount} USDT успешно создана!\nПерешлите это сообщение продавцу {seller} или откройте интерфейс кнопки ниже.", reply_markup=markup)
+        bot.send_message(message.chat.id, f"✅ Сделка на {amount} USDT успешно создана!\nПерешлите это сообщение продавцу {seller} или откройте интерфейс кнопки ниже.", reply_markup=markup)
     except:
-        await message.answer("❌ Ошибка формата. Напишите сумму цифрами и юзернейм через пробел. Пример: `85 @cryptobotmanag`", parse_mode="Markdown")
+        bot.send_message(message.chat.id, "❌ Ошибка формата. Напишите сумму цифрами и юзернейм через пробел. Пример: `85 @cryptobotmanag`", parse_mode="Markdown")
 
 def get_html_layout(deal):
     total = deal['amount'] + 5
@@ -111,9 +110,11 @@ app = web.Application()
 app.router.add_get('/deal/{id}', handle_web_app)
 
 async def start_background_tasks(app):
-    asyncio.create_task(executor.start_polling(dp, skip_updates=True))
+    import threading
+    threading.Thread(target=bot.infinity_polling, daemon=True).start()
 
 app.on_startup.append(start_background_tasks)
 
 if __name__ == '__main__':
     web.run_app(app, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+
