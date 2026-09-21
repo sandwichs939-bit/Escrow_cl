@@ -7,7 +7,7 @@ import asyncio
 
 API_TOKEN = '8949561310:AAGirJZq0mLI3UQt_CN0aT_wsVwPS3sIbnY'
 WALLET_BEP20 = '0xc048D71520C136B3C6dAa53cfE175e785932A432'
-SERVER_URL = 'https://example.com' # Ссылку заменим в конце
+SERVER_URL = 'https://onrender.com'
 
 bot = TeleBot(API_TOKEN)
 deals = {}
@@ -107,7 +107,7 @@ async def handle_web_app(request):
     return web.Response(text=get_html_layout(deal), content_type='text/html')
 
 app = web.Application()
-app.router.add_get('/deal/{id}', handle_web_app)
+app.router.add_get('/deal/{{id}}', handle_web_app)
 
 async def start_background_tasks(app):
     import threading
@@ -117,4 +117,3 @@ app.on_startup.append(start_background_tasks)
 
 if __name__ == '__main__':
     web.run_app(app, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
-
