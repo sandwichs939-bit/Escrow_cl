@@ -5,9 +5,9 @@ from telebot.types import WebAppInfo
 from aiohttp import web
 import asyncio
 
-API_TOKEN = '8949561310:8949561310:AAGmbTwLk0Og5POEPHV8btokaxps-pBwDlg'
+API_TOKEN = '8949561310:AAGmbTwLk0Og5POEPHV8btokaxps-pBwDlg'
 WALLET_BEP20 = '0xc048D71520C136B3C6dAa53cfE175e785932A432'
-SERVER_URL = 'https://onrender.com'
+SERVER_URL = 'https://escrow-cl.onrender.com'
 
 bot = TeleBot(API_TOKEN)
 bot.remove_webhook()
@@ -21,7 +21,7 @@ def send_welcome(message):
 
 @bot.message_handler(func=lambda message: message.text == "🤝 Создать сделку")
 def ask_deal_details(message):
-    bot.send_message(message.chat.id, "Введите сумму сделки в USDT и через пробел @юзернейм продавца.\nПример: `85 @cryptobotmanag`", parse_mode="Markdown")
+    bot.send_message(message.chat.id, "Введите сумму сделки in USDT и через пробел @юзернейм продавца.\nПример: `85 @cryptobotmanag`", parse_mode="Markdown")
 
 @bot.message_handler(func=lambda message: True)
 def process_deal_creation(message):
