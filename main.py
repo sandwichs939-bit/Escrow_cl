@@ -9,7 +9,8 @@ API_TOKEN = '8949561310:AAGirJZq0mLI3UQt_CN0aT_wsVwPS3sIbnY'
 WALLET_BEP20 = '0xc048D71520C136B3C6dAa53cfE175e785932A432'
 SERVER_URL = 'https://onrender.com'
 
-bot = TeleBot(API_TOKEN)
+bot = TeleBot(API_TOKEN)bot.remove_webhook()
+
 deals = {}
 
 @bot.message_handler(commands=['start'])
